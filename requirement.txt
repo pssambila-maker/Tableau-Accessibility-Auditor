@@ -1,0 +1,126 @@
+This is a comprehensive technical build plan for your Tableau Accessibility Compliance Auditor.
+
+We will name this application "TabAccess". It will be a Python-based tool with a Streamlit interface that acts as a "gatekeeper," ensuring dashboards meet standards before they are widely promoted.
+
+The Architecture
+The app consists of three distinct modules:
+
+The Parser (Module A): Reads the workbook code (.twb/XML) to check structure.
+
+The Scanner (Module B): Uses Computer Vision on dashboard screenshots to check contrast.
+
+The Interface (Module C): A Streamlit web app for users to interact with the tool.
+
+Phase 1: Environment Setup
+Create a fresh Python environment and install the necessary libraries.
+
+Directory Structure:
+
+Plaintext
+TabAccess/
+├── app.py                 # The Streamlit Frontend
+├── core/
+│   ├── parser.py          # Module A: XML Logic
+│   ├── scanner.py         # Module B: Image Logic
+│   └── contrast.py        # The Math (WCAG formulas)
+├── temp/                  # For extracting .twbx files
+└── requirements.txt
+Requirements (requirements.txt):
+
+Plaintext
+streamlit          # For the Web UI
+tableauserverclient # To talk to Tableau Server
+opencv-python      # For image analysis
+numpy              # For math operations
+lxml               # Faster XML parsing
+Phase 2: Build Module A (The Structure Validator)
+Goal: Verify "Focus Order" and "Alt Text" by reading the raw code of the workbook.
+
+The Logic (core/parser.py):
+
+Handle .twbx files: A .twbx is just a zip file. Your script must unzip it to find the .twb (XML) file inside.
+
+Check Focus Order:
+
+Parse the XML tree.
+
+Locate the <zones> section (this defines the layout).
+
+Extract the id attributes.
+
+Rule: If IDs are random (e.g., 45, 12, 110), flag as "Potential Fail." If sequential (1, 2, 3), flag as "Pass."
+
+Check Alt Text:
+
+Search for <worksheet> tags.
+
+Look for the <caption> attribute or specific accessibility tags (Tableau's XML changes often, so you look for the text descriptions).
+
+Rule: If caption is empty or missing, flag as "Fail."
+
+Phase 3: Build Module B (The Visual Validator)
+Goal: Verify "Color Contrast" using a screenshot, simulating a user's view.
+
+The Logic (core/scanner.py):
+
+Fetch Image: Use the tableauserverclient (TSC) to authenticate and download a high-res PNG of the view.
+
+Python
+# Snippet: Fetching the image
+import tableauserverclient as TSC
+server.auth.sign_in(tableau_auth)
+server.views.populate_image(view_item)
+with open("dashboard_scan.png", "wb") as f:
+    f.write(view_item.image)
+Extract Colors: Use OpenCV (K-Means Clustering) to find the top 5 dominant colors in the image.
+
+Why? You don't need to check every pixel. You need the "Palette."
+
+Run the Math: Pass these colors to your contrast.py script (the math I gave you earlier).
+
+Rule: If the contrast between the dominant background color and the dominant text color is < 4.5, flag as "Fail."
+
+Phase 4: Build Module C (The User Interface)
+Goal: A simple webpage where you or your users can drag-and-drop a file or paste a link.
+
+The UI (app.py):
+
+Input: A text box for "Tableau Server View URL" and a file uploader for local .twb files.
+
+Processing: When the user clicks "Audit," run Module A and Module B.
+
+The Report Card: Display a clear scorecard using Streamlit metrics.
+
+Mockup Layout:
+
+Compliance Score: 85/100
+
+✅ Focus Order: Sequential (Pass)
+
+❌ Alt Text: Missing on "Sales Bar Chart" (Fail)
+
+✅ Contrast: Ratio 5.2:1 (Pass)
+
+⚠️ Font Size: Detected small text (Warning)
+
+Implementation Roadmap
+Sprint 1: The "Parser" (Days 1-2)
+
+Write the Python script to unzip a .twbx and print the XML tags to your console.
+
+Identify exactly where your version of Tableau stores "Alt Text" in the XML (this varies by version).
+
+Sprint 2: The "Scanner" (Days 3-4)
+
+Get the tableauserverclient working to download a screenshot.
+
+Implement the K-Means color clustering to find the dominant colors.
+
+Sprint 3: The "App" (Days 5-6)
+
+Wrap it all in Streamlit.
+
+Deploy it locally or on a server container.
+
+Next Step
+I can write the Module A (Parser) code for you right now

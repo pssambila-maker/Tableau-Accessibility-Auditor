@@ -1,0 +1,7 @@
+streamlit
+tableauserverclient
+opencv-python-headless
+numpy
+lxml
+pillow
+scikit-learn
